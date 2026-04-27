@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Nunito+Sans:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 50% 17%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 50% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 50% 17%;
+
+    --primary: 187 95% 83%;
+    --primary-foreground: 215 50% 17%;
+
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 187 95% 83%;
+    --accent-foreground: 215 50% 17%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 199 89% 48%;
+
+    --radius: 0.75rem;
+    --highlight: 59 82% 73%;
+    --selector: 59 85% 73%;
+    --selector-border: 59 75% 63%;
+    --admin-tab: 213 65% 56%;
+    --admin-tab-hover: 59 82% 73%;
+
+    --chart-line: 199 89% 48%;
+    --chart-fill: 187 95% 83%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 50% 17%;
+    --sidebar-primary: 187 95% 83%;
+    --sidebar-primary-foreground: 215 50% 17%;
+    --sidebar-accent: 187 95% 93%;
+    --sidebar-accent-foreground: 215 50% 17%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 199 89% 48%;
+
+    --font-display: 'Montserrat', sans-serif;
+    --font-body: 'Poppins', sans-serif;
+    --font-data: 'Nunito Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 215 50% 7%;
+    --foreground: 210 40% 98%;
+    --card: 215 50% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 215 50% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 187 95% 83%;
+    --primary-foreground: 215 50% 17%;
+    --secondary: 199 89% 48%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 215 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 187 95% 30%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 32% 17%;
+    --input: 215 32% 17%;
+    --ring: 199 89% 48%;
+    --sidebar-background: 215 50% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 187 95% 83%;
+    --sidebar-primary-foreground: 215 50% 17%;
+    --sidebar-accent: 215 32% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 32% 17%;
+    --sidebar-ring: 199 89% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+
+/* Leaflet overrides */
+.leaflet-container {
+  border-radius: var(--radius);
+  z-index: 0;
+}
