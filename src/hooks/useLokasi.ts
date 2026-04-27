@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
 
 export interface Lokasi {
@@ -79,25 +79,8 @@ export function useLokasi() {
     };
   }, []);
 
-  const fallbackLokasi = useMemo<Lokasi[]>(
-    () => [
-      {
-        id: "default-1",
-        name: "Dana Reksa",
-        shortName: "Dana Reksa",
-        floors: [
-          { id: "Lantai 5", name: "Lantai 5" },
-          { id: "Lantai 15", name: "Lantai 15" },
-        ],
-        address: "Jl. Medan Merdeka Barat, Jakarta",
-        mapsLink: "https://www.google.com/maps?q=Jl.+Medan+Merdeka+Barat,+Jakarta",
-      },
-    ],
-    [],
-  );
-
   return {
-    lokasi: lokasi.length > 0 ? lokasi : fallbackLokasi,
+    lokasi,
     sedangMemuat,
   };
 }

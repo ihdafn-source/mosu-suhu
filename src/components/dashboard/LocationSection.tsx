@@ -12,7 +12,6 @@ interface LocationSectionProps {
 }
 
 const mapCoords: Record<string, { lat: number; lng: number; name: string }> = {
-	"1": { lat: -6.1754, lng: 106.8272, name: "Dana Reksa" },
 };
 
 const LocationSection = ({
@@ -24,7 +23,7 @@ const LocationSection = ({
 }: LocationSectionProps) => {
 	const location = locations.find((item) => item.id === selectedLocationId);
 	const floor = location?.floors.find((f) => f.id === selectedFloorId) ?? location?.floors[0];
-	const coords = mapCoords[selectedLocationId] ?? { lat: -6.1754, lng: 106.8272, name: "Lokasi" };
+	const coords = mapCoords[selectedLocationId];
 
 	return (
 		<section className="grid gap-4 xl:grid-cols-5">
@@ -53,8 +52,14 @@ const LocationSection = ({
 					<MapPin className="h-4 w-4 text-secondary" />
 					<h2 className="font-display text-lg font-bold text-foreground">Peta Lokasi</h2>
 				</div>
-				<div className="h-[260px] rounded-2xl border border-border/70">
-					<LocationMap lat={coords.lat} lng={coords.lng} name={coords.name} />
+				<div className="h-[260px] rounded-2xl border border-border/70 overflow-hidden">
+					{coords ? (
+						<LocationMap lat={coords.lat} lng={coords.lng} name={coords.name} />
+					) : (
+						<div className="flex h-full items-center justify-center bg-background/80 px-6 text-center">
+							<p className="text-sm text-muted-foreground">Belum ada data lokasi yang dipilih.</p>
+						</div>
+					)}
 				</div>
 			</article>
 		</section>
