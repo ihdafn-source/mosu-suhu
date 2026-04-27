@@ -122,10 +122,10 @@ Deno.serve(async (req) => {
 			);
 		}
 
-		const apiKey = readString(payload, ["api_key", "apiKey", "key"]);
-		const requestedFloor = readString(payload, ["floor", "floor_id", "lantai"]);
+		const apiKey = readString(payload, ["api_key", "apiKey", "apikey", "key"]);
+		const requestedFloor = readString(payload, ["floor", "floor_id", "lantai", "lantai_id"]);
 		const temperature = readNumber(payload, ["temperature", "temp", "suhu"]);
-		const humidity = readNumber(payload, ["humidity", "hum", "kelembapan"]);
+		const humidity = readNumber(payload, ["humidity", "hum", "kelembapan", "kelembaban"]);
 		const triggerAlert = toBoolean(payload["trigger_alert"] ?? payload["triggerAlert"], true);
 
 		if (!apiKey || !requestedFloor || !Number.isFinite(temperature) || !Number.isFinite(humidity)) {
