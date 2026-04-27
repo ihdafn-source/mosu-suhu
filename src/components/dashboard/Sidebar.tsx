@@ -67,7 +67,7 @@ const Sidebar = ({
 							<button
 								onClick={() => onLocationChange(loc.id)}
 								className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm ${
-									selectedLocationId === loc.id ? "bg-primary/30 font-medium" : "text-muted-foreground hover:bg-muted"
+									selectedLocationId === loc.id ? "bg-[#ABF5FD] text-slate-900 font-medium" : "text-muted-foreground hover:bg-muted"
 								}`}
 							>
 								<Building2 className="w-4 h-4" />
@@ -82,7 +82,7 @@ const Sidebar = ({
 											key={fl.id}
 											onClick={() => onFloorChange(fl.id)}
 											className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
-												selectedFloorId === fl.id ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted"
+												selectedFloorId === fl.id ? "bg-[#ABF5FD] text-slate-900" : "text-muted-foreground hover:bg-muted"
 											}`}
 										>
 											<Layers className="w-3.5 h-3.5" />

@@ -163,7 +163,7 @@ const LocationManager = () => {
           <Button
             size="sm"
             onClick={() => { resetForm(); setShowForm(true); }}
-            className="bg-admin-tab hover:bg-admin-tab/90 text-white"
+            className="bg-[#ABF5FD] hover:bg-[#99edf6] text-slate-900"
           >
             <Plus className="w-4 h-4 mr-1" /> Tambah
           </Button>
@@ -212,7 +212,7 @@ const LocationManager = () => {
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button type="submit" size="sm" className="bg-admin-tab hover:bg-admin-tab/90 text-white">
+              <Button type="submit" size="sm" className="bg-[#ABF5FD] hover:bg-[#99edf6] text-slate-900">
                 {editingId ? "Simpan Perubahan" : "Tambahkan"}
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={resetForm}>Batal</Button>
