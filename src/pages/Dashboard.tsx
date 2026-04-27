@@ -38,7 +38,7 @@ function toInputDateTime(date: Date) {
   };
 }
 
-function pickWindow(logs: TemperatureLog[], rangeWindowMs: number, endMs: number) {
+function pickWindow(logs: LogSuhu[], rangeWindowMs: number, endMs: number) {
   const startMs = endMs - rangeWindowMs;
   return logs.filter((item) => {
     const at = new Date(item.timestamp).getTime();
@@ -46,10 +46,10 @@ function pickWindow(logs: TemperatureLog[], rangeWindowMs: number, endMs: number
   });
 }
 
-function downsample(logs: TemperatureLog[]) {
+function downsample(logs: LogSuhu[]) {
   if (logs.length <= MAX_CHART_POINTS) return logs;
   const bucketSize = Math.ceil(logs.length / MAX_CHART_POINTS);
-  const compact: TemperatureLog[] = [];
+  const compact: LogSuhu[] = [];
 
   for (let i = 0; i < logs.length; i += bucketSize) {
     const bucket = logs.slice(i, i + bucketSize);
@@ -76,7 +76,7 @@ function getWeekKey(date: Date) {
   return `${utcDate.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
-function aggregateForRange(logs: TemperatureLog[], range: RangeKey): ChartPoint[] {
+function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
   if (range === "1D") {
     const compressed = downsample(logs);
     return compressed.map((item) => ({
@@ -209,7 +209,7 @@ function buildGoogleMapsEmbedUrl(mapsLink: string | null, address: string | null
 }
 
 const Dashboard = ({ onLogoClick }: DashboardProps) => {
-  const { locations } = useLocations();
+  const { lokasi } = useLokasi();
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [selectedFloorId, setSelectedFloorId] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -230,8 +230,8 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   };
 
   const selectedLocation = useMemo(
-    () => locations.find((item) => item.id === selectedLocationId) ?? locations[0],
-    [locations, selectedLocationId],
+    () => lokasi.find((item) => item.id === selectedLocationId) ?? lokasi[0],
+    [lokasi, selectedLocationId],
   );
 
   const selectedFloor = useMemo(
@@ -240,10 +240,10 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   );
 
   useEffect(() => {
-    if (!selectedLocationId && locations.length > 0) {
-      setSelectedLocationId(locations[0].id);
+    if (!selectedLocationId && lokasi.length > 0) {
+      setSelectedLocationId(lokasi[0].id);
     }
-  }, [locations, selectedLocationId]);
+  }, [lokasi, selectedLocationId]);
 
   useEffect(() => {
     if (!selectedLocation?.floors?.length) return;
@@ -256,7 +256,12 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   const mapEmbedUrl = buildGoogleMapsEmbedUrl(selectedLocation?.mapsLink ?? null, selectedLocation?.address ?? null);
   const mapOpenUrl = buildGoogleMapsUrl(selectedLocation?.mapsLink ?? null, selectedLocation?.address ?? null);
 
-  const { logs, latest, loading, getRangeWindowMs } = useTemperatureFeed({
+  const {
+    dataLog: logs,
+    terbaru: latest,
+    sedangMemuat: loading,
+    getJendelaRentangMs: getRangeWindowMs,
+  } = useAliranSuhu({
     locationId: selectedLocation?.id ?? "default-1",
     floorId: selectedFloor?.id ?? "default-1-f-1",
   });
@@ -285,7 +290,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar
-        locations={locations}
+        locations={lokasi}
         selectedLocationId={selectedLocation?.id ?? ""}
         selectedFloorId={selectedFloor?.id ?? ""}
         onLocationChange={setSelectedLocationId}
@@ -297,7 +302,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
 
       <main className="flex-1 overflow-y-auto">
         <DashboardHeader
-          locations={locations}
+          locations={lokasi}
           selectedLocationId={selectedLocation?.id ?? ""}
           selectedFloorId={selectedFloor?.id ?? ""}
           onLocationChange={setSelectedLocationId}
