@@ -18,6 +18,7 @@ type BarisSuhu = {
   humidity?: number | string;
   location_id?: string | number;
   floor_id?: string | number;
+  floor?: string;
 };
 
 type KunciRentang = "1D" | "1W" | "1M" | "1Y";
@@ -49,7 +50,8 @@ function mapRow(row: BarisSuhu, fallbackLocationId: string, fallbackFloorId: str
   const temperature = Number(row.temperature ?? Number.NaN);
   const humidity = Number(row.humidity ?? Number.NaN);
   const location_id = String(row.location_id ?? fallbackLocationId).trim();
-  const floor_id = String(row.floor_id ?? fallbackFloorId).trim();
+  // Use 'floor' instead of 'floor_id' as per new schema
+  const floor_id = String((row.floor ?? row.floor_id ?? fallbackFloorId)).trim();
 
   if (!id || !timestamp || !location_id || !floor_id || !Number.isFinite(temperature) || !Number.isFinite(humidity)) {
     return null;
@@ -101,11 +103,11 @@ export function useAliranSuhu({ locationId, floorId }: ArgumenAliranSuhu): Hasil
 
       try {
         const { data, error } = await supabase
-          .from("temperature_logs")
+          .from("temperature_readings")
           .select("*")
           .eq("location_id", locationId)
-          .eq("floor_id", floorId)
-          .order("timestamp", { ascending: true });
+          .eq("floor", floorId)
+          .order("recorded_at", { ascending: true });
 
         if (!mounted) return;
 
