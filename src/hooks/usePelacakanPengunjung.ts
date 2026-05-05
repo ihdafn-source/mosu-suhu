@@ -12,7 +12,7 @@ function deteksiPeramban(userAgent: string): string {
   return "Unknown";
 }
 
-function visitor_logs (userAgent: string): string {
+function deteksiPerangkat (userAgent: string): string {
   if (/tablet|ipad/i.test(userAgent)) return "Tablet";
   if (/mobi|android|iphone/i.test(userAgent)) return "Mobile";
   return "Desktop";
@@ -37,20 +37,25 @@ export function usePelacakanPengunjung() {
         ipAddress = null;
       }
 
-      const vistior_logs = {
+      const dataPengunjung = {
         ip_address: ipAddress,
-        user_agent: userAgent,
-        device: visitor_logs(userAgent),
+        device: deteksiPerangkat(userAgent),
         browser: deteksiPeramban(userAgent),
-        visited_at: new Date().toISOString(),
+        // visited_at tidak perlu dikirim, sudah default di DB
       };
 
-      const { error } = await supabase.from("visitor_logs").insert(visitor_logs );
-      if (!error) {
+      console.log("Insert visitor_logs:", dataPengunjung);
+
+      const { error } = await supabase
+        .from("visitor_logs")
+        .insert([dataPengunjung]);
+
+      if (error) {
+        console.error("Gagal insert visitor_logs:", error);
+      } else {
         sessionStorage.setItem(KUNCI_SESI_PENGUNJUNG, "1");
       }
     };
-
     void kirimDataPengunjung();
   }, []);
 }
