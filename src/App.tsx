@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import LoadingScreen from "@/components/LoadingScreen";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { usePelacakanPengunjung } from "@/hooks/usePelacakanPengunjung";
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,8 @@ const App = () => {
     const remaining = Math.max(0, 1200 - elapsed);
     window.setTimeout(() => setLoading(false), remaining);
   };
+
+  usePelacakanPengunjung();
 
   if (loading) {
     return <LoadingScreen onFinish={handleLoadingFinish} />;
