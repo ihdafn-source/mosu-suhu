@@ -4,6 +4,7 @@ import { supabase } from "../integrations/supabase/client";
 export type LogSuhu = {
   id: string;
   timestamp: string;
+  recorded_at?: string; 
   temperature: number;
   humidity: number;
   location_id: string;
@@ -13,6 +14,7 @@ export type LogSuhu = {
 type BarisSuhu = {
   id?: string | number;
   timestamp?: string;
+  recorded_at?: string;  
   created_at?: string;
   temperature?: number | string;
   humidity?: number | string;
@@ -46,7 +48,7 @@ const REFRESH_INTERVAL_MS = 5000;
 
 function mapRow(row: BarisSuhu, fallbackLocationId: string, fallbackFloorId: string): LogSuhu | null {
   const id = String(row.id ?? "").trim();
-  const timestamp = String(row.timestamp ?? row.created_at ?? "").trim();
+  const timestamp = String(row.recorded_at ?? row.timestamp ?? row.created_at ?? "").trim();
   const temperature = Number(row.temperature ?? Number.NaN);
   const humidity = Number(row.humidity ?? Number.NaN);
   const location_id = String(row.location_id ?? fallbackLocationId).trim();
