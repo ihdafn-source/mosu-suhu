@@ -6,7 +6,8 @@ import TemperatureChart from "@/components/TemperatureChart";
 import GradientRamp from "@/components/dashboard/GradientRamp";
 import { useLokasi } from "@/hooks/useLokasi";
 import { CalendarDays, Clock3, ExternalLink, MapPin } from "lucide-react";
-import { useAliranSuhu, type LogSuhu } from "@/hooks/useAliranSuhu";
+import { useDataSuhu } from "@/hooks/useDataSuhu";
+import { type LogSuhu } from "@/hooks/useAliranSuhu";
 interface DashboardProps {
   onLogoClick: () => void;
 }
@@ -258,10 +259,11 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
 
   const {
     dataLog: logs,
-    terbaru: latest,
     sedangMemuat: loading,
     getJendelaRentangMs: getRangeWindowMs,
-  } = useAliranSuhu({
+    suhuSaatIni,
+    kelembapanSaatIni,
+  } = useDataSuhu({
     locationId: selectedLocation?.id ?? "default-1",
     floorId: selectedFloor?.id ?? "default-1-f-1",
   });
@@ -311,7 +313,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
         />
 
         <div className="p-4 md:p-6 space-y-6">
-          <SummaryCards coreTemp={latest?.temperature ?? null} humidity={latest?.humidity ?? null} loading={loading} />
+          <SummaryCards coreTemp={suhuSaatIni} humidity={kelembapanSaatIni} loading={loading} />
 
           <div className="bg-card rounded-xl border border-border p-4 md:p-5">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -449,3 +451,5 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
 };
 
 export default Dashboard;
+
+
