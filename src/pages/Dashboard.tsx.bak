@@ -3,15 +3,11 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/dashboard/Sidebar";
 import SummaryCards from "@/components/dashboard/SummaryCards";
 import TemperatureChart from "@/components/TemperatureChart";
-import TemperatureTable from "@/components/dashboard/TemperatureTable";
-import LiveSensorPanel from "@/components/dashboard/Livesensorpanel";
 import GradientRamp from "@/components/dashboard/GradientRamp";
 import { useLokasi } from "@/hooks/useLokasi";
 import { CalendarDays, Clock3, ExternalLink, MapPin } from "lucide-react";
 import { useDataSuhu } from "@/hooks/useDataSuhu";
-import { useTelegramAlert } from "@/hooks/useTelegramAlert";
 import { type LogSuhu } from "@/hooks/useAliranSuhu";
-
 interface DashboardProps {
   onLogoClick: () => void;
 }
@@ -36,7 +32,11 @@ function toInputDateTime(date: Date) {
   const day = String(date.getDate()).padStart(2, "0");
   const hour = String(date.getHours()).padStart(2, "0");
   const minute = String(date.getMinutes()).padStart(2, "0");
-  return { date: `${year}-${month}-${day}`, time: `${hour}:${minute}` };
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}`,
+  };
 }
 
 function pickWindow(logs: LogSuhu[], rangeWindowMs: number, endMs: number) {
@@ -51,6 +51,7 @@ function downsample(logs: LogSuhu[]) {
   if (logs.length <= MAX_CHART_POINTS) return logs;
   const bucketSize = Math.ceil(logs.length / MAX_CHART_POINTS);
   const compact: LogSuhu[] = [];
+
   for (let i = 0; i < logs.length; i += bucketSize) {
     const bucket = logs.slice(i, i + bucketSize);
     if (bucket.length === 0) continue;
@@ -63,6 +64,7 @@ function downsample(logs: LogSuhu[]) {
       humidity: Math.round(avgHum * 100) / 100,
     });
   }
+
   return compact;
 }
 
@@ -86,11 +88,15 @@ function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
     }));
   }
 
-  const buckets = new Map<string, { count: number; tempSum: number; humSum: number; latestTs: string; date: Date }>();
+  const buckets = new Map<
+    string,
+    { count: number; tempSum: number; humSum: number; latestTs: string; date: Date }
+  >();
 
   logs.forEach((item) => {
     const date = new Date(item.timestamp);
     let key = "";
+
     if (range === "1W") {
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     } else if (range === "1M") {
@@ -98,11 +104,19 @@ function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
     } else {
       key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     }
+
     const existing = buckets.get(key);
     if (!existing) {
-      buckets.set(key, { count: 1, tempSum: item.temperature, humSum: item.humidity, latestTs: item.timestamp, date });
+      buckets.set(key, {
+        count: 1,
+        tempSum: item.temperature,
+        humSum: item.humidity,
+        latestTs: item.timestamp,
+        date,
+      });
       return;
     }
+
     existing.count += 1;
     existing.tempSum += item.temperature;
     existing.humSum += item.humidity;
@@ -112,7 +126,7 @@ function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
     }
   });
 
-  return Array.from(buckets.entries())
+  const points = Array.from(buckets.entries())
     .sort((a, b) => a[1].date.getTime() - b[1].date.getTime())
     .map(([key, value]) => {
       let label = key;
@@ -123,6 +137,7 @@ function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
       } else if (range === "1Y") {
         label = value.date.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
       }
+
       return {
         timestamp: value.latestTs,
         label,
@@ -130,11 +145,17 @@ function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
         humidity: Math.round((value.humSum / value.count) * 100) / 100,
       };
     });
+
+  return points;
 }
 
 function toChartLabel(timestamp: string) {
   const date = new Date(timestamp);
-  return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return date.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function toMeridiemLabel(time24: string) {
@@ -142,6 +163,7 @@ function toMeridiemLabel(time24: string) {
   const hour = Number(hourRaw);
   const minute = Number(minuteRaw);
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return "12:00 AM";
+
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${period}`;
@@ -149,11 +171,18 @@ function toMeridiemLabel(time24: string) {
 
 function extractCoordinates(value: string | null) {
   if (!value) return null;
+
   const source = decodeURIComponent(value);
   const atMatch = source.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (atMatch) return { lat: atMatch[1], lng: atMatch[2] };
+  if (atMatch) {
+    return { lat: atMatch[1], lng: atMatch[2] };
+  }
+
   const qMatch = source.match(/[?&](q|query)=(-?\d+\.\d+),(-?\d+\.\d+)/);
-  if (qMatch) return { lat: qMatch[2], lng: qMatch[3] };
+  if (qMatch) {
+    return { lat: qMatch[2], lng: qMatch[3] };
+  }
+
   return null;
 }
 
@@ -165,14 +194,20 @@ function buildGoogleMapsUrl(mapsLink: string | null, address: string | null) {
 
 function buildGoogleMapsEmbedUrl(mapsLink: string | null, address: string | null) {
   const coords = extractCoordinates(mapsLink);
-  if (coords) return `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=16&output=embed`;
-  if (address && address.trim()) return `https://www.google.com/maps?q=${encodeURIComponent(address.trim())}&z=16&output=embed`;
-  if (mapsLink && mapsLink.trim()) return `https://www.google.com/maps?q=${encodeURIComponent(mapsLink.trim())}&z=16&output=embed`;
+  if (coords) {
+    return `https://www.google.com/maps?q=${coords.lat},${coords.lng}&z=16&output=embed`;
+  }
+
+  if (address && address.trim()) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(address.trim())}&z=16&output=embed`;
+  }
+
+  if (mapsLink && mapsLink.trim()) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(mapsLink.trim())}&z=16&output=embed`;
+  }
+
   return "https://www.google.com/maps?q=Jakarta&z=12&output=embed";
 }
-
-// Tab types for the main content area
-type ViewMode = "chart" | "table" | "live";
 
 const Dashboard = ({ onLogoClick }: DashboardProps) => {
   const { lokasi } = useLokasi();
@@ -184,12 +219,16 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   const [selectedDate, setSelectedDate] = useState(now.date);
   const [selectedTime, setSelectedTime] = useState(now.time);
   const [isRealtimeView, setIsRealtimeView] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("chart");
 
   const [selectedHour = "00", selectedMinute = "00"] = selectedTime.split(":");
 
-  const updateHour = (hour: string) => setSelectedTime(`${hour}:${selectedMinute}`);
-  const updateMinute = (minute: string) => setSelectedTime(`${selectedHour}:${minute}`);
+  const updateHour = (hour: string) => {
+    setSelectedTime(`${hour}:${selectedMinute}`);
+  };
+
+  const updateMinute = (minute: string) => {
+    setSelectedTime(`${selectedHour}:${minute}`);
+  };
 
   const selectedLocation = useMemo(
     () => lokasi.find((item) => item.id === selectedLocationId) ?? lokasi[0],
@@ -210,23 +249,30 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   useEffect(() => {
     if (!selectedLocation?.floors?.length) return;
     const floorExists = selectedLocation.floors.some((item) => item.id === selectedFloorId);
-    if (!floorExists) setSelectedFloorId(selectedLocation.floors[0].id);
+    if (!floorExists) {
+      setSelectedFloorId(selectedLocation.floors[0].id);
+    }
   }, [selectedFloorId, selectedLocation]);
 
   const mapEmbedUrl = buildGoogleMapsEmbedUrl(selectedLocation?.mapsLink ?? null, selectedLocation?.address ?? null);
   const mapOpenUrl = buildGoogleMapsUrl(selectedLocation?.mapsLink ?? null, selectedLocation?.address ?? null);
 
-  const { dataLog: logs, sedangMemuat: loading, getJendelaRentangMs: getRangeWindowMs, suhuSaatIni, kelembapanSaatIni } = useDataSuhu({
+  const {
+    dataLog: logs,
+    sedangMemuat: loading,
+    getJendelaRentangMs: getRangeWindowMs,
+    suhuSaatIni,
+    kelembapanSaatIni,
+  } = useDataSuhu({
     locationId: selectedLocation?.id ?? "default-1",
     floorId: selectedFloor?.id ?? "default-1-f-1",
   });
-
-  useTelegramAlert(suhuSaatIni, selectedLocation?.name ?? "Tidak diketahui");
 
   const chartData = useMemo(() => {
     const rangeMs = getRangeWindowMs(selectedRange);
     const searchMoment = new Date(`${selectedDate}T${selectedTime}:00`).getTime();
     const endMs = isRealtimeView || Number.isNaN(searchMoment) ? Date.now() : searchMoment;
+
     const inWindow = pickWindow(logs, rangeMs, endMs);
     return aggregateForRange(inWindow, selectedRange);
   }, [getRangeWindowMs, isRealtimeView, logs, selectedDate, selectedRange, selectedTime]);
@@ -239,7 +285,9 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
     setIsRealtimeView(true);
   };
 
-  const handleSearchHistory = () => setIsRealtimeView(false);
+  const handleSearchHistory = () => {
+    setIsRealtimeView(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -251,7 +299,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
         onFloorChange={setSelectedFloorId}
         onLogoClick={onLogoClick}
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed((v) => !v)}
+        onToggleCollapse={() => setIsSidebarCollapsed((value) => !value)}
       />
 
       <main className="flex-1 overflow-y-auto">
@@ -267,133 +315,92 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
         <div className="p-4 md:p-6 space-y-6">
           <SummaryCards coreTemp={suhuSaatIni} humidity={kelembapanSaatIni} loading={loading} />
 
-          {/* Panel utama: Tren Suhu / Tabel Histori / Live All Sensors */}
           <div className="bg-card rounded-xl border border-border p-4 md:p-5">
-            {/* Tab toggle */}
-            <div className="flex gap-2 mb-4 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setViewMode("chart")}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${viewMode === "chart" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-              >
-                Tren Suhu
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${viewMode === "table" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-              >
-                Tabel Histori
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("live")}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition inline-flex items-center gap-2 ${viewMode === "live" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-              >
-                <span className={`h-2 w-2 rounded-full ${viewMode === "live" ? "bg-white animate-pulse" : "bg-emerald-500 animate-pulse"}`} />
-                Live Semua Sensor
-              </button>
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="font-bold text-lg">Tren Suhu</h2>
+                <p className="text-xs text-muted-foreground mt-1">Pantau perubahan suhu dan kelembaban berdasarkan waktu yang dipilih.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                    className="bg-transparent text-sm outline-none"
+                  />
+                </div>
+                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
+                  <Clock3 className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={selectedHour}
+                    onChange={(event) => updateHour(event.target.value)}
+                    className="bg-transparent text-sm outline-none"
+                  >
+                    {HOURS_24.map((hour) => (
+                      <option key={hour} value={hour}>
+                        {hour}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-sm text-muted-foreground">:</span>
+                  <select
+                    value={selectedMinute}
+                    onChange={(event) => updateMinute(event.target.value)}
+                    className="bg-transparent text-sm outline-none"
+                  >
+                    {MINUTES_60.map((minute) => (
+                      <option key={minute} value={minute}>
+                        {minute}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                    {toMeridiemLabel(selectedTime)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearchHistory}
+                  className="rounded-xl border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-accent shadow-sm"
+                >
+                  Cari Histori
+                </button>
+              </div>
             </div>
 
-            {/* Filter controls — hanya tampil di tab chart */}
-            {viewMode === "chart" && (
-              <>
-                <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="font-bold text-lg">Tren Suhu</h2>
-                    <p className="text-xs text-muted-foreground mt-1">Pantau perubahan suhu dan kelembaban berdasarkan waktu.</p>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                    <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
-                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="bg-transparent text-sm outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm">
-                      <Clock3 className="h-4 w-4 text-muted-foreground" />
-                      <select value={selectedHour} onChange={(e) => updateHour(e.target.value)} className="bg-transparent text-sm outline-none">
-                        {HOURS_24.map((h) => <option key={h} value={h}>{h}</option>)}
-                      </select>
-                      <span className="text-sm text-muted-foreground">:</span>
-                      <select value={selectedMinute} onChange={(e) => updateMinute(e.target.value)} className="bg-transparent text-sm outline-none">
-                        {MINUTES_60.map((m) => <option key={m} value={m}>{m}</option>)}
-                      </select>
-                      <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-                        {toMeridiemLabel(selectedTime)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSearchHistory}
-                      className="rounded-xl border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-accent shadow-sm"
-                    >
-                      Cari Histori
-                    </button>
-                  </div>
-                </div>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                  isRealtimeView ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                }`}
+              >
+                {isRealtimeView ? "Mode Realtime" : "Mode Histori"}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {selectedLocation?.shortName ?? "Lokasi"} - {selectedFloor?.name ?? "Lantai"}
+              </span>
+            </div>
 
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${isRealtimeView ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {isRealtimeView ? "Mode Realtime" : "Mode Histori"}
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                    {selectedLocation?.shortName ?? "Lokasi"} — {selectedFloor?.name ?? "Lantai"}
-                  </span>
-                </div>
+            <TemperatureChart data={chartData} />
 
-                <TemperatureChart data={chartData} />
-
-                <div className="mt-4 grid grid-cols-4 gap-2">
-                  {RANGE_KEYS.map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      onClick={() => setRealtimeNow(range)}
-                      className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${selectedRange === range ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Tabel histori lokasi & lantai yang dipilih */}
-            {viewMode === "table" && (
-              <div>
-                <div className="mb-4">
-                  <h2 className="font-bold text-lg">Tabel Histori Suhu</h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Data terbaru — {selectedLocation?.shortName ?? "Lokasi"} · {selectedFloor?.name ?? "Lantai"}
-                  </p>
-                </div>
-                <TemperatureTable
-                  locationId={selectedLocation?.id ?? "default-1"}
-                  floorId={selectedFloor?.id ?? "default-1-f-1"}
-                  
-                />
-              </div>
-            )}
-
-            {/* Live all sensors — kartu ringkasan per lantai */}
-            {viewMode === "live" && (
-              <div>
-                <div className="mb-4">
-                  <h2 className="font-bold text-lg flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-                    Live Semua Sensor
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Status terkini tiap lantai — aman, waspada, atau panas
-                  </p>
-                </div>
-                <LiveSensorPanel />
-              </div>
-            )}
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {RANGE_KEYS.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => setRealtimeNow(range)}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    selectedRange === range
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
 
           </div>
 
@@ -405,9 +412,9 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 <GradientRamp />
               </div>
               <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                <span>18°C — Sejuk</span>
-                <span>25°C — Normal</span>
-                <span>35°C+ — Waspada</span>
+                <span>18C - Dingin</span>
+                <span>25C - Normal</span>
+                <span>35C+ - Panas</span>
               </div>
             </div>
 
@@ -431,7 +438,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 href={mapOpenUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
               >
                 <MapPin className="h-4 w-4" /> Buka di Google Maps <ExternalLink className="h-4 w-4" />
               </a>
@@ -444,3 +451,5 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
 };
 
 export default Dashboard;
+
+

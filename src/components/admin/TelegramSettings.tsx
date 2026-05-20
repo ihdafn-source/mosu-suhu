@@ -14,7 +14,7 @@ interface TelegramAlertConfig {
 const TelegramSettings = () => {
   const [chatId, setChatId] = useState("");
   const [botToken, setBotToken] = useState("");
-  const [threshold, setThreshold] = useState(25);
+  const [threshold, setThreshold] = useState(28);
   const [cooldownSeconds, setCooldownSeconds] = useState(60);
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,21 +44,26 @@ const TelegramSettings = () => {
 
   const saveConfig = async () => {
     setSaving(true);
+
+    // Pakai upsert supaya kalau row id=1 belum ada, otomatis dibikin
     const { error } = await supabase
       .from("telegram_alert_config")
-      .update({
-        chat_id: chatId,
-        bot_token: botToken,
-        threshold,
-        cooldown_seconds: cooldownSeconds,
-        enabled,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", 1);
+      .upsert(
+        {
+          id: 1,
+          chat_id: chatId,
+          bot_token: botToken,
+          threshold,
+          cooldown_seconds: cooldownSeconds,
+          enabled,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" }
+      );
 
     setSaving(false);
     if (error) {
-      toast.error("Gagal menyimpan konfigurasi");
+      toast.error("Gagal menyimpan konfigurasi: " + error.message);
     } else {
       toast.success("Konfigurasi Telegram disimpan!");
     }

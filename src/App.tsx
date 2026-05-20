@@ -24,7 +24,7 @@ const App = () => {
 
   return (
     <>
-      <Toaster />
+      <Toaster style={{ zIndex: 9999, position: "fixed" }} />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
