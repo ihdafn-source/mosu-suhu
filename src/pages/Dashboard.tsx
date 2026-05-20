@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/dashboard/Sidebar";
 import SummaryCards from "@/components/dashboard/SummaryCards";
 import TemperatureChart from "@/components/TemperatureChart";
 import TemperatureTable from "@/components/dashboard/TemperatureTable";
-import LiveSensorPanel from "@/components/dashboard/Livesensorpanel";
+import LiveSensorPanel from "@/components/dashboard/LiveSensorPanel";
 import GradientRamp from "@/components/dashboard/GradientRamp";
 import { useLokasi } from "@/hooks/useLokasi";
 import { CalendarDays, Clock3, ExternalLink, MapPin } from "lucide-react";
@@ -295,7 +295,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
               </button>
             </div>
 
-            {/* Filter controls — hanya tampil di tab chart */}
+            {/* Filter controls â€” hanya tampil di tab chart */}
             {viewMode === "chart" && (
               <>
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -341,7 +341,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                     {isRealtimeView ? "Mode Realtime" : "Mode Histori"}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                    {selectedLocation?.shortName ?? "Lokasi"} — {selectedFloor?.name ?? "Lantai"}
+                    {selectedLocation?.shortName ?? "Lokasi"} â€” {selectedFloor?.name ?? "Lantai"}
                   </span>
                 </div>
 
@@ -368,7 +368,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 <div className="mb-4">
                   <h2 className="font-bold text-lg">Tabel Histori Suhu</h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Data terbaru — {selectedLocation?.shortName ?? "Lokasi"} · {selectedFloor?.name ?? "Lantai"}
+                    Data terbaru â€” {selectedLocation?.shortName ?? "Lokasi"} Â· {selectedFloor?.name ?? "Lantai"}
                   </p>
                 </div>
                 <TemperatureTable
@@ -379,7 +379,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
               </div>
             )}
 
-            {/* Live all sensors — kartu ringkasan per lantai */}
+            {/* Live all sensors â€” kartu ringkasan per lantai */}
             {viewMode === "live" && (
               <div>
                 <div className="mb-4">
@@ -388,7 +388,7 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                     Live Semua Sensor
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Status terkini tiap lantai — aman, waspada, atau panas
+                    Status terkini tiap lantai â€” aman, waspada, atau panas
                   </p>
                 </div>
                 <LiveSensorPanel />
@@ -405,9 +405,9 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 <GradientRamp />
               </div>
               <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                <span>18°C — Sejuk</span>
-                <span>25°C — Normal</span>
-                <span>35°C+ — Waspada</span>
+                <span>18Â°C â€” Sejuk</span>
+                <span>25Â°C â€” Normal</span>
+                <span>35Â°C+ â€” Waspada</span>
               </div>
             </div>
 
