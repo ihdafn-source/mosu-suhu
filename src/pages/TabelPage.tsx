@@ -18,8 +18,8 @@ type RowOrGap = { type: "row"; data: HourlyRow } | { type: "gap"; duration: stri
 
 const GAP_HOUR_MS = 60 * 60 * 1000;
 const ROWS_PER_PAGE = 40;
-const THRESHOLD_PANAS = 35;
-const THRESHOLD_WASPADA = 31.5;
+const THRESHOLD_PANAS = 27;
+const THRESHOLD_WASPADA = 25; // 90% dari 25
 
 function fmtDate(ts: string) {
   return new Date(ts).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });

@@ -15,8 +15,8 @@ type SensorLatest = {
 };
 
 const REFRESH_MS = 60 * 1000; // update tiap 1 jam? No — ambil data terbaru tiap 60 detik, tapi tampilkan reading terakhir
-const THRESHOLD_PANAS = 35;
-const THRESHOLD_WASPADA = 31.5; // 90% dari 35
+const THRESHOLD_PANAS = 27;
+const THRESHOLD_WASPADA = 25; // 90% dari 25
 
 function formatJam(ts: string) {
   return new Date(ts).toLocaleTimeString("id-ID", {

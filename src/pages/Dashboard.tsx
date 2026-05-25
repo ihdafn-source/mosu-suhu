@@ -4,7 +4,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import SummaryCards from "@/components/dashboard/SummaryCards";
 import TemperatureChart from "@/components/TemperatureChart";
 import TemperatureTable from "@/components/dashboard/TemperatureTable";
-import LiveSensorPanel from "@/components/dashboard/LiveSensorPanel";
+import LiveSensorPanel from "@/components/dashboard/Livesensorpanel";
 import GradientRamp from "@/components/dashboard/GradientRamp";
 import { useLokasi } from "@/hooks/useLokasi";
 import { CalendarDays, Clock3, ExternalLink, MapPin } from "lucide-react";
@@ -74,6 +74,40 @@ function getWeekKey(date: Date) {
   const weekNo = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   return `${utcDate.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
+
+// ── BARU: Agregasi per jam untuk mode "Per Jam" di 1D ──────────────────────
+function aggregateHourly(logs: LogSuhu[], targetDate: string): ChartPoint[] {
+  // Buat 24 slot jam kosong
+  const slots: Record<number, { tempSum: number; humSum: number; count: number; ts: string }> = {};
+  for (let h = 0; h < 24; h++) {
+    slots[h] = { tempSum: 0, humSum: 0, count: 0, ts: `${targetDate}T${String(h).padStart(2, "0")}:00:00` };
+  }
+
+  for (const item of logs) {
+    const d = new Date(item.timestamp);
+    const dateStr = d.toISOString().slice(0, 10);
+    if (dateStr !== targetDate) continue;
+    const hour = d.getHours();
+    slots[hour].tempSum += item.temperature;
+    slots[hour].humSum += item.humidity;
+    slots[hour].count += 1;
+  }
+
+  return Array.from({ length: 24 }, (_, h) => {
+    const s = slots[h];
+    const label = `${String(h).padStart(2, "0")}:00`;
+    if (s.count === 0) {
+      return { timestamp: s.ts, label, temperature: 0, humidity: 0 };
+    }
+    return {
+      timestamp: s.ts,
+      label,
+      temperature: Math.round((s.tempSum / s.count) * 10) / 10,
+      humidity: Math.round((s.humSum / s.count) * 10) / 10,
+    };
+  });
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function aggregateForRange(logs: LogSuhu[], range: RangeKey): ChartPoint[] {
   if (range === "1D") {
@@ -171,8 +205,11 @@ function buildGoogleMapsEmbedUrl(mapsLink: string | null, address: string | null
   return "https://www.google.com/maps?q=Jakarta&z=12&output=embed";
 }
 
-// Tab types for the main content area
 type ViewMode = "chart" | "table" | "live";
+
+// ── BARU: mode tampilan grafik 1D ──────────────────────────────────────────
+type ChartMode1D = "realtime" | "hourly";
+// ────────────────────────────────────────────────────────────────────────────
 
 const Dashboard = ({ onLogoClick }: DashboardProps) => {
   const { lokasi } = useLokasi();
@@ -185,6 +222,10 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   const [selectedTime, setSelectedTime] = useState(now.time);
   const [isRealtimeView, setIsRealtimeView] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("chart");
+
+  // ── BARU ──────────────────────────────────────────────────────────────────
+  const [chartMode1D, setChartMode1D] = useState<ChartMode1D>("realtime");
+  // ─────────────────────────────────────────────────────────────────────────
 
   const [selectedHour = "00", selectedMinute = "00"] = selectedTime.split(":");
 
@@ -224,12 +265,17 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
   useTelegramAlert(suhuSaatIni, selectedLocation?.name ?? "Tidak diketahui");
 
   const chartData = useMemo(() => {
+    // ── BARU: kalau 1D + mode Per Jam, pakai aggregateHourly ──────────────
+    if (selectedRange === "1D" && chartMode1D === "hourly") {
+      return aggregateHourly(logs, selectedDate);
+    }
+    // ──────────────────────────────────────────────────────────────────────
     const rangeMs = getRangeWindowMs(selectedRange);
     const searchMoment = new Date(`${selectedDate}T${selectedTime}:00`).getTime();
     const endMs = isRealtimeView || Number.isNaN(searchMoment) ? Date.now() : searchMoment;
     const inWindow = pickWindow(logs, rangeMs, endMs);
     return aggregateForRange(inWindow, selectedRange);
-  }, [getRangeWindowMs, isRealtimeView, logs, selectedDate, selectedRange, selectedTime]);
+  }, [getRangeWindowMs, isRealtimeView, logs, selectedDate, selectedRange, selectedTime, chartMode1D]);
 
   const setRealtimeNow = (range: RangeKey) => {
     const current = toInputDateTime(new Date());
@@ -237,6 +283,9 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
     setSelectedDate(current.date);
     setSelectedTime(current.time);
     setIsRealtimeView(true);
+    // ── BARU: reset ke realtime saat ganti range ──────────────────────────
+    if (range !== "1D") setChartMode1D("realtime");
+    // ──────────────────────────────────────────────────────────────────────
   };
 
   const handleSearchHistory = () => setIsRealtimeView(false);
@@ -267,7 +316,6 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
         <div className="p-4 md:p-6 space-y-6">
           <SummaryCards coreTemp={suhuSaatIni} humidity={kelembapanSaatIni} loading={loading} />
 
-          {/* Panel utama: Tren Suhu / Tabel Histori / Live All Sensors */}
           <div className="bg-card rounded-xl border border-border p-4 md:p-5">
             {/* Tab toggle */}
             <div className="flex gap-2 mb-4 flex-wrap">
@@ -295,7 +343,6 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
               </button>
             </div>
 
-            {/* Filter controls â€” hanya tampil di tab chart */}
             {viewMode === "chart" && (
               <>
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -337,15 +384,55 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 </div>
 
                 <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${isRealtimeView ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {isRealtimeView ? "Mode Realtime" : "Mode Histori"}
+                  {/* Badge mode */}
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                    selectedRange === "1D" && chartMode1D === "hourly"
+                      ? "bg-sky-100 text-sky-700"
+                      : isRealtimeView
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {selectedRange === "1D" && chartMode1D === "hourly"
+                      ? "Rata-rata Per Jam"
+                      : isRealtimeView
+                      ? "Mode Realtime"
+                      : "Mode Histori"}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-                    {selectedLocation?.shortName ?? "Lokasi"} â€” {selectedFloor?.name ?? "Lantai"}
+                    {selectedLocation?.shortName ?? "Lokasi"} – {selectedFloor?.name ?? "Lantai"}
                   </span>
+
+                  {/* ── BARU: Toggle Realtime / Per Jam, hanya muncul di 1D ── */}
+                  {selectedRange === "1D" && (
+                    <div className="ml-auto flex items-center rounded-lg border border-border bg-muted p-0.5 gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => { setChartMode1D("realtime"); setIsRealtimeView(true); }}
+                        className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                          chartMode1D === "realtime"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Realtime
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setChartMode1D("hourly")}
+                        className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                          chartMode1D === "hourly"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Per Jam
+                      </button>
+                    </div>
+                  )}
+                  {/* ──────────────────────────────────────────────────────── */}
                 </div>
 
-                <TemperatureChart data={chartData} />
+                <TemperatureChart data={chartData} isHourlyMode={selectedRange === "1D" && chartMode1D === "hourly"} />
 
                 <div className="mt-4 grid grid-cols-4 gap-2">
                   {RANGE_KEYS.map((range) => (
@@ -362,24 +449,21 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
               </>
             )}
 
-            {/* Tabel histori lokasi & lantai yang dipilih */}
             {viewMode === "table" && (
               <div>
                 <div className="mb-4">
                   <h2 className="font-bold text-lg">Tabel Histori Suhu</h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Data terbaru â€” {selectedLocation?.shortName ?? "Lokasi"} Â· {selectedFloor?.name ?? "Lantai"}
+                    Data terbaru – {selectedLocation?.shortName ?? "Lokasi"} · {selectedFloor?.name ?? "Lantai"}
                   </p>
                 </div>
                 <TemperatureTable
                   locationId={selectedLocation?.id ?? "default-1"}
                   floorId={selectedFloor?.id ?? "default-1-f-1"}
-                  
                 />
               </div>
             )}
 
-            {/* Live all sensors â€” kartu ringkasan per lantai */}
             {viewMode === "live" && (
               <div>
                 <div className="mb-4">
@@ -388,13 +472,12 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                     Live Semua Sensor
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Status terkini tiap lantai â€” aman, waspada, atau panas
+                    Status terkini tiap lantai – aman, waspada, atau panas
                   </p>
                 </div>
                 <LiveSensorPanel />
               </div>
             )}
-
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -405,9 +488,9 @@ const Dashboard = ({ onLogoClick }: DashboardProps) => {
                 <GradientRamp />
               </div>
               <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                <span>18Â°C â€” Sejuk</span>
-                <span>25Â°C â€” Normal</span>
-                <span>35Â°C+ â€” Waspada</span>
+                <span>18°C – Sejuk</span>
+                <span>25°C – Normal</span>
+                <span>27°C+ – Waspada</span>
               </div>
             </div>
 
