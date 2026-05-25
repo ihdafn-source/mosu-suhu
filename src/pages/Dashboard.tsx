@@ -4,7 +4,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import SummaryCards from "@/components/dashboard/SummaryCards";
 import TemperatureChart from "@/components/TemperatureChart";
 import TemperatureTable from "@/components/dashboard/TemperatureTable";
-import LiveSensorPanel from "@/components/dashboard/Livesensorpanel";
+import LiveSensorPanel from "@/components/dashboard/LiveSensorPanel";
 import GradientRamp from "@/components/dashboard/GradientRamp";
 import { useLokasi } from "@/hooks/useLokasi";
 import { CalendarDays, Clock3, ExternalLink, MapPin } from "lucide-react";
