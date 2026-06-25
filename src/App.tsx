@@ -2,11 +2,15 @@ import { useRef, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import LoadingScreen from "@/components/LoadingScreen";
+import SiteLock from "@/components/Sitelock";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { usePelacakanPengunjung } from "@/hooks/usePelacakanPengunjung";
 
 const App = () => {
+  const [unlocked, setUnlocked] = useState(
+    () => sessionStorage.getItem("mosu_site_unlocked") === "1"
+  );
   const [loading, setLoading] = useState(true);
   const loadingStartedAt = useRef(Date.now());
 
@@ -17,6 +21,10 @@ const App = () => {
   };
 
   usePelacakanPengunjung();
+
+  if (!unlocked) {
+    return <SiteLock onSuccess={() => setUnlocked(true)} />;
+  }
 
   if (loading) {
     return <LoadingScreen onFinish={handleLoadingFinish} />;

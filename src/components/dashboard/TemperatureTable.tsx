@@ -19,7 +19,6 @@ type RowOrGap =
   | { type: "gap"; from: string; to: string; durationMin: number };
 
 const REFRESH_MS = 2000;
-const DEFAULT_THRESHOLD = 35;
 const GAP_THRESHOLD_MS = 2 * 60 * 1000;
 const ROWS_PER_PAGE = 50;
 const THRESHOLD_PANAS = 27;
@@ -244,13 +243,11 @@ function ExportBarDesktop({ allRows }: { allRows: DisplayRow[] }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface TemperatureTableProps {
-  threshold?: number;
   locationId?: string;
   floorId?: string;
 }
 
 export default function TemperatureTable({
-  threshold = DEFAULT_THRESHOLD,
   locationId,
   floorId,
 }: TemperatureTableProps) {
@@ -417,8 +414,8 @@ export default function TemperatureTable({
               );
 
               const row = item.data;
-              const isHot = row.temperature > threshold;
-              const isWarm = !isHot && row.temperature > threshold * 0.9;
+              const isHot = row.temperature > THRESHOLD_PANAS;
+              const isWarm = !isHot && row.temperature > THRESHOLD_WASPADA;
 
               return (
                 <tr key={row.id} className={[
@@ -440,7 +437,7 @@ export default function TemperatureTable({
                     {isHot
                       ? <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/60 dark:text-red-300">🔴 Panas</span>
                       : isWarm
-                      ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">🟡 Hangat</span>
+                      ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">🟡 Waspada</span>
                       : <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">🟢 Normal</span>}
                   </td>
                 </tr>

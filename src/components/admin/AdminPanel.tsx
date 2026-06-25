@@ -5,6 +5,7 @@ import AdminLogin from "./AdminLogin";
 import LocationManager from "./LocationManager";
 import VisitorManager from "./VisitorManager";
 import TelegramSettings from "./TelegramSettings";
+import TelegramSubscribers from "./TelegramSubscribers";
 import PanelTabs, { type AdminTabKey } from "./PanelTabs";
 
 interface AdminPanelProps {
@@ -44,8 +45,10 @@ const AdminPanel = ({ onBack }: AdminPanelProps) => {
           <LocationManager />
         ) : activeTab === "pengguna" ? (
           <VisitorManager />
-        ) : (
+        ) : activeTab === "telegram" ? (
           <TelegramSettings />
+        ) : (
+          <TelegramSubscribers />
         )}
       </div>
     </div>

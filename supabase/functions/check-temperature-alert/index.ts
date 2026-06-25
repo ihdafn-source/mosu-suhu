@@ -23,6 +23,11 @@ async function sendTelegram(botToken: string, chatId: string, pesan: string) {
   return res.ok;
 }
 
+async function broadcastTelegram(botToken: string, chatIds: string[], pesan: string) {
+  const results = await Promise.all(chatIds.map((id) => sendTelegram(botToken, id, pesan)));
+  return results.some((ok) => ok);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -62,9 +67,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!config.bot_token || !config.chat_id) {
+    if (!config.bot_token) {
       return new Response(
-        JSON.stringify({ skipped: true, reason: "Bot token or chat_id not set" }),
+        JSON.stringify({ skipped: true, reason: "Bot token not set" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // ── 1b. Kumpulkan semua penerima: chat_id lama di config (kalau masih
+    //        diisi) + semua subscriber yang sudah di-approve admin ────────
+    const { data: subscribers } = await supabase
+      .from("telegram_subscribers")
+      .select("chat_id")
+      .eq("status", "approved");
+
+    const recipientSet = new Set<string>();
+    if (config.chat_id) recipientSet.add(String(config.chat_id));
+    for (const s of subscribers ?? []) recipientSet.add(String(s.chat_id));
+    const recipients = Array.from(recipientSet);
+
+    if (recipients.length === 0) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "No approved recipients" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -182,8 +206,8 @@ Deno.serve(async (req) => {
       pesan += `\nPantau terus kondisi ruangan.`;
     }
 
-    // ── 8. Kirim Telegram ───────────────────────────────────────────────────
-    const terkirim = await sendTelegram(config.bot_token, config.chat_id, pesan);
+    // ── 8. Kirim Telegram ke semua penerima yang approved ──────────────────
+    const terkirim = await broadcastTelegram(config.bot_token, recipients, pesan);
 
     if (terkirim) {
       // Update last_alert_at di DB biar cooldown jalan

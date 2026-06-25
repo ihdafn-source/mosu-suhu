@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type AdminTabKey = "lokasi" | "pengguna" | "telegram";
+type AdminTabKey = "lokasi" | "pengguna" | "telegram" | "subscriber";
 
 type PanelTabsProps = {
   activeTab: AdminTabKey;
@@ -11,6 +11,7 @@ const TAB_ITEMS: Array<{ key: AdminTabKey; label: string }> = [
   { key: "lokasi", label: "Manajemen Lokasi" },
   { key: "pengguna", label: "Manajemen Pengguna" },
   { key: "telegram", label: "Telegram Alert" },
+  { key: "subscriber", label: "Subscriber Telegram" },
 ];
 
 const PanelTabs = ({ activeTab, onChange }: PanelTabsProps) => {

@@ -54,6 +54,18 @@ async function sendTelegram(botToken: string, chatId: string, pesan: string) {
   });
 }
 
+async function broadcastTelegram(botToken: string, chatIds: string[], pesan: string) {
+  await Promise.all(chatIds.map((id) => sendTelegram(botToken, id, pesan).catch(() => {})));
+}
+
+async function fetchApprovedChatIds(): Promise<string[]> {
+  const { data } = await supabase
+    .from("telegram_subscribers")
+    .select("chat_id")
+    .eq("status", "approved");
+  return (data ?? []).map((s: { chat_id: string }) => String(s.chat_id));
+}
+
 async function fetchAllSensorReadings(linkedFloors: LinkedFloor[]): Promise<SensorReading[]> {
   if (linkedFloors.length === 0) return [];
   const results: SensorReading[] = [];
@@ -198,9 +210,15 @@ export function useTelegramAlert(suhuSaatIni: number, locationName: string) {
           "mosu-alert-overheat"
         );
 
-        // Telegram
-        if (config.bot_token && config.chat_id) {
-          sendTelegram(config.bot_token, config.chat_id, pesanTelegram).catch(() => {});
+        // Telegram — broadcast ke chat_id config (kalau masih diisi) +
+        // semua subscriber yang sudah di-approve admin
+        if (config.bot_token) {
+          const approvedIds = await fetchApprovedChatIds();
+          const recipientSet = new Set<string>(approvedIds);
+          if (config.chat_id) recipientSet.add(config.chat_id);
+          if (recipientSet.size > 0) {
+            broadcastTelegram(config.bot_token, Array.from(recipientSet), pesanTelegram).catch(() => {});
+          }
         }
       }
 
